@@ -1,7 +1,10 @@
+import keras
 import cPickle as pickle
 import zmq
 import sys
 import numpy
+from keras.layers.core import Dense, Dropout, Activation, Flatten
+from keras.layers.convolutional import Convolution2D, MaxPooling2D
 
 port = "5556"
 if len(sys.argv) > 1:
@@ -41,6 +44,8 @@ while True:
     new_array = g_socket.recv()
     print 'new array received'
     layers = pickle.loads(new_array)
+    for layer in layers:
+        print layer.weights
     g_socket.send(pickle.dumps(layers))
     #if ARRAY is None:
     #    ARRAY = new_array
