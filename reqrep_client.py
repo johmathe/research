@@ -22,12 +22,22 @@ def send_array(socket, A, flags=0, copy=True, track=False):
     socket.send_json(md, flags | zmq.SNDMORE)
     return socket.send(A, flags, copy=copy, track=track)
 
+def recv_array(socket, flags=0, copy=True, track=False):
+    """recv a numpy array"""
+    md = socket.recv_json(flags=flags)
+    msg = socket.recv(flags=flags, copy=copy, track=track)
+    buf = buffer(msg)
+    A = np.frombuffer(buf, dtype=md['dtype'])
+    return A.reshape(md['shape'])
+
+
 #  Do 10 requests, waiting each time for a response
 for request in range(1, 10):
-    array = np.random.random(size=(100, 1024, 1024)).astype(np.float32)
+    array = request * np.ones((100, 1024, 1024)).astype(np.float32)
     start = time.time()
-    send_array(g_socket, array)
+    print 'sending new array'
+    print 'MEEH: %s' % send_array(g_socket, array)
     #  Get the reply.
-    message = g_socket.recv()
+    message = recv_array(g_socket)
     print time.time() - start
     print "Received reply ", request, "[", message, "]"
