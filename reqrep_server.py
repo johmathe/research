@@ -24,5 +24,4 @@ def recv_array(socket, flags=0, copy=True, track=False):
 while True:
     #  Wait for next request from client
     print recv_array(g_socket)
-    time.sleep(1)
     g_socket.send("World from %s" % port)
