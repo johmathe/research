@@ -1,6 +1,7 @@
 import cPickle as pickle
 import zmq
 
+EPOCHS = 50
 PORT_BASE = 6000
 N = 2
 
@@ -30,12 +31,14 @@ def main_thread():
         context = zmq.Context()
         socket[i] = context.socket(zmq.REP)
         socket.bind("tcp://*:%s" % port)
-    while True:
+    for k in range(EPOCHS):
+        print 'epoch %d' % k
         x = [None] * N
         u = [None] * N
         # Receive all weights
         for i in range(N):
             x[i], u[i] = receive_worker_data(socket[i])
+            print 'received vector from worker %d' % i
         x_bar = average(x)
         u_bar = average(u)
         z = soft_thresholding(x_bar + u_bar)
