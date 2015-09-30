@@ -52,18 +52,18 @@ print(X_test.shape[0], 'test samples')
 Y_train = np_utils.to_categorical(y_train, nb_classes)
 Y_test = np_utils.to_categorical(y_test, nb_classes)
 
-w_reg = ADMMRegularizer()
-b_reg = ADMMRegularizer()
+w_reg = ADMMRegularizer(rho=10)
+b_reg = ADMMRegularizer(rho=10)
 model = Sequential()
 
 model.add(Convolution2D(nb_filters[0], image_dimensions, nb_conv[0], nb_conv[0], W_regularizer=w_reg, b_regularizer=b_reg, border_mode='full'))
 model.add(Activation('relu'))
-model.add(Convolution2D(nb_filters[0], nb_filters[0], nb_conv[0], nb_conv[0]))
+model.add(Convolution2D(nb_filters[0], nb_filters[0], nb_conv[0], nb_conv[0], W_regularizer=ADMMRegularizer(rho=10), b_regularizer=ADMMRegularizer(rho=10)))
 model.add(Activation('relu'))
 model.add(MaxPooling2D(poolsize=(nb_pool[0], nb_pool[0])))
 model.add(Dropout(0.25))
 
-model.add(Convolution2D(nb_filters[1], nb_filters[0], nb_conv[0], nb_conv[0], border_mode='full'))
+model.add(Convolution2D(nb_filters[1], nb_filters[0], nb_conv[0], nb_conv[0], border_mode='full',W_regularizer=ADMMRegularizer(rho=10),b_regularizer=ADMMRegularizer(rho=10)))
 model.add(Activation('relu'))
 model.add(Convolution2D(nb_filters[1], nb_filters[1], nb_conv[1], nb_conv[1]))
 model.add(Activation('relu'))
@@ -88,9 +88,9 @@ model.compile(loss='categorical_crossentropy', optimizer=sgd)
 
 if len(sys.argv) > 1:
     port = 6000 + int(sys.argv[1])
-    server_address = 'tcp://localhost:%d' % port
+    server_address = 'tcp://bordeaux.local.:%d' % port
     print('using weight server @ %s' % server_address)
-    weight_sync = callbacks.WeightSynchronizer(server_address, frequency=1)
+    weight_sync = callbacks.WeightSynchronizer(server_address, frequency=128)
 
 print("Not using data augmentation or normalization")
 
@@ -104,7 +104,7 @@ if len(sys.argv) > 1:
               batch_size=batch_size,
               callbacks=[weight_sync],
               shuffle=True,
-              nb_epoch=nb_epoch)
+              nb_epoch=nb_epoch,validation_split=0.1,show_accuracy=True)
 else:
     model.fit(X_train, Y_train,
               batch_size=batch_size,
