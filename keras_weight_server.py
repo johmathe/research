@@ -9,7 +9,6 @@ N = 2
 
 def receive_worker_data(socket):
     data = socket.recv()
-    print 'received worker data'
     unpickled = pickle.loads(data)
     return unpickled
 
@@ -33,7 +32,7 @@ def average(worker_data):
 
 
 def soft_x(x, gamma):
-    return np.sign(x) * np.max(0, np.abs(x) - gamma / 2)
+    return np.sign(x) * np.maximum(0, np.abs(x) - gamma / 2)
 
 
 def soft_thresholding(x, gamma):
@@ -42,16 +41,18 @@ def soft_thresholding(x, gamma):
     for l in x:
         params = []
         for p in l:
-            params.append(soft_x(l, gamma))
+            params.append(soft_x(p, gamma))
         res.append(params)
     return res
 
 
 def sum_layers(x, y):
     res = []
-    for il, l in x:
-        for ip, p in l:
-            res.append(p + y[il][ip])
+    for il, l in enumerate(x):
+        params = []
+        for ip, p in enumerate(l):
+            params.append(p + y[il][ip])
+        res.append(params)
     return res
 
 
@@ -71,14 +72,12 @@ def main_thread():
         u = []
         x = []
         for i in range(N):
-            print 'receiving vector from worker %d' % i
             worker_data = receive_worker_data(socket[i])
             u.append(worker_data['u'])
             x.append(worker_data['x'])
-            print 'received vector from worker %d' % i
         x_bar = average(x)
         u_bar = average(u)
-        z = soft_thresholding(sum_layers(x_bar, u_bar))
+        z = soft_thresholding(sum_layers(x_bar, u_bar), 0.1)
         for i in range(N):
             # Send in mcast?
             send_worker_data(socket[i], z)
