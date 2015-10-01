@@ -69,15 +69,11 @@ def main_thread():
         print 'epoch %d' % k
         # Receive all weights
         worker_data = []
-        u = []
         x = []
         for i in range(N):
             worker_data = receive_worker_data(socket[i])
-            u.append(worker_data['u'])
-            x.append(worker_data['x'])
-        x_bar = average(x)
-        u_bar = average(u)
-        z = soft_thresholding(sum_layers(x_bar, u_bar), 0.1)
+            x.append(worker_data)
+        z = average(x)
         for i in range(N):
             # Send in mcast?
             send_worker_data(socket[i], z)

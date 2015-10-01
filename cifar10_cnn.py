@@ -6,7 +6,7 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.optimizers import SGD, Adadelta, Adagrad
-from keras.regularizers import ADMMRegularizer
+from keras.regularizers import Consensus
 from keras.utils import np_utils, generic_utils
 from six.moves import range
 from keras import callbacks
@@ -52,8 +52,8 @@ print(X_test.shape[0], 'test samples')
 Y_train = np_utils.to_categorical(y_train, nb_classes)
 Y_test = np_utils.to_categorical(y_test, nb_classes)
 
-w_reg = ADMMRegularizer()
-b_reg = ADMMRegularizer()
+w_reg = Consensus()
+b_reg = Consensus()
 model = Sequential()
 
 model.add(Convolution2D(nb_filters[0], image_dimensions, nb_conv[0], nb_conv[0], W_regularizer=w_reg, b_regularizer=b_reg, border_mode='full'))
