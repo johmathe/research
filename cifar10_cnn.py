@@ -88,9 +88,9 @@ model.compile(loss='categorical_crossentropy', optimizer=sgd)
 
 if len(sys.argv) > 1:
     port = 6000 + int(sys.argv[1])
-    server_address = 'tcp://localhost:%d' % port
+    server_address = 'tcp://bordeaux.local.:%d' % port
     print('using weight server @ %s' % server_address)
-    weight_sync = callbacks.WeightSynchronizer(server_address, frequency=1)
+    weight_sync = callbacks.WeightSynchronizer(server_address, frequency=128)
 
 print("Not using data augmentation or normalization")
 
@@ -104,7 +104,7 @@ if len(sys.argv) > 1:
               batch_size=batch_size,
               callbacks=[weight_sync],
               shuffle=True,
-              nb_epoch=nb_epoch)
+              nb_epoch=nb_epoch,validation_split=0.1,show_accuracy=True)
 else:
     model.fit(X_train, Y_train,
               batch_size=batch_size,
