@@ -52,20 +52,18 @@ print(X_test.shape[0], 'test samples')
 Y_train = np_utils.to_categorical(y_train, nb_classes)
 Y_test = np_utils.to_categorical(y_test, nb_classes)
 
-w_reg = Consensus()
-b_reg = Consensus()
 model = Sequential()
 
-model.add(Convolution2D(nb_filters[0], image_dimensions, nb_conv[0], nb_conv[0], W_regularizer=w_reg, b_regularizer=b_reg, border_mode='full'))
+model.add(Convolution2D(nb_filters[0], image_dimensions, nb_conv[0], nb_conv[0], W_regularizer=Consensus(), b_regularizer=Consensus(), border_mode='full'))
 model.add(Activation('relu'))
-model.add(Convolution2D(nb_filters[0], nb_filters[0], nb_conv[0], nb_conv[0]))
+model.add(Convolution2D(nb_filters[0], nb_filters[0], nb_conv[0], nb_conv[0], W_regularizer=Consensus(), b_regularizer=Consensus()))
 model.add(Activation('relu'))
 model.add(MaxPooling2D(poolsize=(nb_pool[0], nb_pool[0])))
 model.add(Dropout(0.25))
 
-model.add(Convolution2D(nb_filters[1], nb_filters[0], nb_conv[0], nb_conv[0], border_mode='full'))
+model.add(Convolution2D(nb_filters[1], nb_filters[0], nb_conv[0], nb_conv[0], border_mode='full', W_regularizer=Consensus(), b_regularizer=Consensus()))
 model.add(Activation('relu'))
-model.add(Convolution2D(nb_filters[1], nb_filters[1], nb_conv[1], nb_conv[1]))
+model.add(Convolution2D(nb_filters[1], nb_filters[1], nb_conv[1], nb_conv[1], W_regularizer=Consensus(), b_regularizer=Consensus()))
 model.add(Activation('relu'))
 model.add(MaxPooling2D(poolsize=(nb_pool[1], nb_pool[1])))
 model.add(Dropout(0.25))
@@ -75,17 +73,17 @@ model.add(Flatten())
 # each pixel has a number of filters, determined by the last Convolution2D
 # layer
 model.add(Dense(nb_filters[-1] * (shapex / nb_pool[0] / nb_pool[1]) *
-                (shapey / nb_pool[0] / nb_pool[1]), 512))
+                (shapey / nb_pool[0] / nb_pool[1]), 512, W_regularizer=Consensus(), b_regularizer=Consensus()))
 model.add(Activation('relu'))
 model.add(Dropout(0.5))
 
-model.add(Dense(512, nb_classes))
+model.add(Dense(512, nb_classes,W_regularizer=Consensus(), b_regularizer=Consensus()))
 model.add(Activation('softmax'))
 
 # let's train the model using SGD + momentum (how original).
 sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 model.compile(loss='categorical_crossentropy', optimizer=sgd)
-
+model.save_weights('weights.hd5')
 if len(sys.argv) > 1:
     port = 6000 + int(sys.argv[1])
     server_address = 'tcp://bordeaux.local.:%d' % port
