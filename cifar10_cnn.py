@@ -62,7 +62,7 @@ Y_test = np_utils.to_categorical(y_test, nb_classes)
 
 model = Sequential()
 
-init_method = 'uniform'
+init_method = 'he_normal'
 model.add(Convolution2D(nb_filters[0], image_dimensions, nb_conv[0], nb_conv[0], W_regularizer=Consensus(rho=regularizers.RHO), b_regularizer=Consensus(rho=regularizers.RHO), init=init_method, border_mode='full'))
 model.add(Activation('relu'))
 model.add(Convolution2D(nb_filters[0], nb_filters[0], nb_conv[0], nb_conv[0], W_regularizer=Consensus(rho=regularizers.RHO), b_regularizer=Consensus(rho=regularizers.RHO), init=init_method))
@@ -84,7 +84,7 @@ model.add(Flatten())
 model.add(Dense(nb_filters[-1] * (shapex / nb_pool[0] / nb_pool[1]) *
                 (shapey / nb_pool[0] / nb_pool[1]), 512, W_regularizer=Consensus(rho=regularizers.RHO), b_regularizer=Consensus(rho=regularizers.RHO), init=init_method))
 model.add(Activation('relu'))
-model.add(Dropout(0.5))
+model.add(Dropout(0.50))
 
 model.add(Dense(512, nb_classes,W_regularizer=Consensus(rho=regularizers.RHO), b_regularizer=Consensus(rho=regularizers.RHO), init=init_method))
 model.add(Activation('softmax'))
@@ -92,7 +92,8 @@ model.add(Activation('softmax'))
 # let's train the model using SGD + momentum (how original).
 sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 model.compile(loss='categorical_crossentropy', optimizer=sgd)
-# model.save_weights('weights.hd5')
+model.load_weights('weights.hd5')
+#model.save_weights('weights.hd5')
 if len(sys.argv) > 1:
     port = 6000 + int(sys.argv[1])
     server_address = 'tcp://bordeaux.local.:%d' % port

@@ -76,7 +76,7 @@ model.add(Activation('softmax'))
 # let's train the model using SGD + momentum (how original).
 sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 model.compile(loss='categorical_crossentropy', optimizer=sgd)
-
+model.load_weights('weights.hd5')
 if not data_augmentation:
     print("Not using data augmentation or normalization")
 
