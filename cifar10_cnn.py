@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import cPickle as pickle
 from keras.datasets import cifar10
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
@@ -11,6 +12,7 @@ from keras import regularizers
 from keras.utils import np_utils, generic_utils
 from six.moves import range
 from keras import callbacks
+
 import sys
 
 '''
@@ -27,9 +29,44 @@ import sys
     save it in a different format, load it in Python 3 and repickle it.
 '''
 
+class History(callbacks.Callback):
+
+    def on_train_begin(self, logs={}):
+        self.epoch = []
+        self.history = {}
+
+    def on_epoch_begin(self, epoch, logs={}):
+        self.seen = 0
+        self.totals = {}
+
+    def on_batch_end(self, batch, logs={}):
+        batch_size = logs.get('size', 0)
+        self.seen += batch_size
+        for k, v in logs.items():
+            if k in self.totals:
+                self.totals[k] += v * batch_size
+            else:
+                self.totals[k] = v * batch_size
+
+    def on_epoch_end(self, epoch, logs={}):
+        self.epoch.append(epoch)
+        for k, v in self.totals.items():
+            if k not in self.history:
+                self.history[k] = []
+            self.history[k].append(v / self.seen)
+
+        for k, v in logs.items():
+            if k not in self.history:
+                self.history[k] = []
+            self.history[k].append(v)
+
+    def on_train_end(self, logs={}):
+        with open('history.pickle', 'w') as f:
+            pickle.dump(self.history, f)
+
 batch_size = 32
 nb_classes = 10
-nb_epoch = 200
+nb_epoch = 2
 data_augmentation = False
 
 # shape of the image (SHAPE x SHAPE)
@@ -100,24 +137,18 @@ if len(sys.argv) > 1:
     print('using weight server @ %s' % server_address)
     weight_sync = callbacks.WeightSynchronizer(server_address, frequency=512)
 
+
 print("Not using data augmentation or normalization")
 
 X_train = X_train.astype("float32")
 X_test = X_test.astype("float32")
 X_train /= 255
 X_test /= 255
-
-if len(sys.argv) > 1:
-    model.fit(X_train, Y_train,
-              batch_size=batch_size,
-              callbacks=[weight_sync],
-              verbose=2,
-              shuffle=True,
-              nb_epoch=nb_epoch,validation_split=0.1,show_accuracy=True)
-else:
-    model.fit(X_train, Y_train,
-              batch_size=batch_size,
-              shuffle=True,
-              nb_epoch=nb_epoch)
+history = History()
+model.fit(X_train, Y_train,
+          batch_size=batch_size,
+          callbacks=[weight_sync, history],
+          verbose=2,
+          nb_epoch=nb_epoch,show_accuracy=True)
 score = model.evaluate(X_test, Y_test, batch_size=batch_size)
 print('Test score:', score)
