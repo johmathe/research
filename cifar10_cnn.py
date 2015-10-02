@@ -119,11 +119,11 @@ model.add(Flatten())
 # each pixel has a number of filters, determined by the last Convolution2D
 # layer
 model.add(Dense(nb_filters[-1] * (shapex / nb_pool[0] / nb_pool[1]) *
-                (shapey / nb_pool[0] / nb_pool[1]), 512, W_regularizer=Consensus(rho=regularizers.RHO), b_regularizer=Consensus(rho=regularizers.RHO), init=init_method))
+                (shapey / nb_pool[0] / nb_pool[1]), 512, init=init_method))
 model.add(Activation('relu'))
 model.add(Dropout(0.50))
 
-model.add(Dense(512, nb_classes,W_regularizer=Consensus(rho=regularizers.RHO), b_regularizer=Consensus(rho=regularizers.RHO), init=init_method))
+model.add(Dense(512, nb_classes, init=init_method))
 model.add(Activation('softmax'))
 
 # let's train the model using SGD + momentum (how original).
