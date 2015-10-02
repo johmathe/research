@@ -7,6 +7,7 @@ from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.optimizers import SGD, Adadelta, Adagrad
 from keras.regularizers import Consensus
+from keras import regularizers
 from keras.utils import np_utils, generic_utils
 from six.moves import range
 from keras import callbacks
@@ -44,6 +45,13 @@ image_dimensions = 3
 
 # the data, shuffled and split between tran and test sets
 (X_train, y_train), (X_test, y_test) = cifar10.load_data()
+
+if sys.argv[1] == '1':
+    X_train=X_train[0:25000]
+    y_train=y_train[0:25000]
+if sys.argv[1] == '0':
+    X_train=X_train[25000:]
+    y_train=y_train[25000:]
 print('X_train shape:', X_train.shape)
 print(X_train.shape[0], 'train samples')
 print(X_test.shape[0], 'test samples')
@@ -54,16 +62,17 @@ Y_test = np_utils.to_categorical(y_test, nb_classes)
 
 model = Sequential()
 
-model.add(Convolution2D(nb_filters[0], image_dimensions, nb_conv[0], nb_conv[0], W_regularizer=Consensus(), b_regularizer=Consensus(), border_mode='full'))
+init_method = 'uniform'
+model.add(Convolution2D(nb_filters[0], image_dimensions, nb_conv[0], nb_conv[0], W_regularizer=Consensus(rho=regularizers.RHO), b_regularizer=Consensus(rho=regularizers.RHO), init=init_method, border_mode='full'))
 model.add(Activation('relu'))
-model.add(Convolution2D(nb_filters[0], nb_filters[0], nb_conv[0], nb_conv[0], W_regularizer=Consensus(), b_regularizer=Consensus()))
+model.add(Convolution2D(nb_filters[0], nb_filters[0], nb_conv[0], nb_conv[0], W_regularizer=Consensus(rho=regularizers.RHO), b_regularizer=Consensus(rho=regularizers.RHO), init=init_method))
 model.add(Activation('relu'))
 model.add(MaxPooling2D(poolsize=(nb_pool[0], nb_pool[0])))
 model.add(Dropout(0.25))
 
-model.add(Convolution2D(nb_filters[1], nb_filters[0], nb_conv[0], nb_conv[0], border_mode='full', W_regularizer=Consensus(), b_regularizer=Consensus()))
+model.add(Convolution2D(nb_filters[1], nb_filters[0], nb_conv[0], nb_conv[0], border_mode='full', W_regularizer=Consensus(rho=regularizers.RHO), b_regularizer=Consensus(rho=regularizers.RHO), init=init_method))
 model.add(Activation('relu'))
-model.add(Convolution2D(nb_filters[1], nb_filters[1], nb_conv[1], nb_conv[1], W_regularizer=Consensus(), b_regularizer=Consensus()))
+model.add(Convolution2D(nb_filters[1], nb_filters[1], nb_conv[1], nb_conv[1], W_regularizer=Consensus(rho=regularizers.RHO), b_regularizer=Consensus(rho=regularizers.RHO), init=init_method))
 model.add(Activation('relu'))
 model.add(MaxPooling2D(poolsize=(nb_pool[1], nb_pool[1])))
 model.add(Dropout(0.25))
@@ -73,22 +82,22 @@ model.add(Flatten())
 # each pixel has a number of filters, determined by the last Convolution2D
 # layer
 model.add(Dense(nb_filters[-1] * (shapex / nb_pool[0] / nb_pool[1]) *
-                (shapey / nb_pool[0] / nb_pool[1]), 512, W_regularizer=Consensus(), b_regularizer=Consensus()))
+                (shapey / nb_pool[0] / nb_pool[1]), 512, W_regularizer=Consensus(rho=regularizers.RHO), b_regularizer=Consensus(rho=regularizers.RHO), init=init_method))
 model.add(Activation('relu'))
 model.add(Dropout(0.5))
 
-model.add(Dense(512, nb_classes,W_regularizer=Consensus(), b_regularizer=Consensus()))
+model.add(Dense(512, nb_classes,W_regularizer=Consensus(rho=regularizers.RHO), b_regularizer=Consensus(rho=regularizers.RHO), init=init_method))
 model.add(Activation('softmax'))
 
 # let's train the model using SGD + momentum (how original).
 sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 model.compile(loss='categorical_crossentropy', optimizer=sgd)
-model.save_weights('weights.hd5')
+# model.save_weights('weights.hd5')
 if len(sys.argv) > 1:
     port = 6000 + int(sys.argv[1])
     server_address = 'tcp://bordeaux.local.:%d' % port
     print('using weight server @ %s' % server_address)
-    weight_sync = callbacks.WeightSynchronizer(server_address, frequency=128)
+    weight_sync = callbacks.WeightSynchronizer(server_address, frequency=512)
 
 print("Not using data augmentation or normalization")
 
@@ -101,6 +110,7 @@ if len(sys.argv) > 1:
     model.fit(X_train, Y_train,
               batch_size=batch_size,
               callbacks=[weight_sync],
+              verbose=2,
               shuffle=True,
               nb_epoch=nb_epoch,validation_split=0.1,show_accuracy=True)
 else:

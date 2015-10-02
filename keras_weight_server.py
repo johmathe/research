@@ -1,6 +1,10 @@
 import numpy as np
 import cPickle as pickle
 import zmq
+import os
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 EPOCHS = 50
 PORT_BASE = 6000
@@ -13,8 +17,8 @@ def receive_worker_data(socket):
     return unpickled
 
 
-def send_worker_data(socket, z):
-    socket.send(pickle.dumps(z))
+def send_worker_data(socket, x_bar):
+    socket.send(pickle.dumps(x_bar))
 
 
 def average(worker_data):
@@ -55,6 +59,27 @@ def sum_layers(x, y):
         res.append(params)
     return res
 
+def plot_all(workers_x, x_bar, i):
+    prefix = './results/epoch_%d/' % i
+    os.mkdir(prefix)
+    for iw, w in enumerate(workers_x):
+        for il, l in enumerate(w):
+            for ip, p in enumerate(l):
+                plt.figure()
+                plt.hist(p.flatten(), bins=np.linspace(-1, 1, 70))
+                plt.savefig('%s/w%d_l%d_p%d.png' % (prefix, iw, il, ip))
+    for il, l in enumerate(x_bar):
+        for ip, p in enumerate(l):
+            plt.figure()
+            plt.hist(p.flatten(), bins=np.linspace(-1, 1, 70))
+            plt.savefig('%s/x_bar_l%d_p%d.png' % (prefix, il, ip))
+
+def epsilon(x, y):
+    total = 0
+    for il, l in enumerate(x):
+        for ip, p in enumerate(l):
+            total += np.sum((p - y[il][ip]) ** 2)
+    return np.sqrt(total)
 
 def main_thread():
     socket = []
@@ -73,10 +98,14 @@ def main_thread():
         for i in range(N):
             worker_data = receive_worker_data(socket[i])
             x.append(worker_data)
-        z = average(x)
+        x_bar = average(x)
+        for i in range(N):
+            print 'distance for v%d: %f' % (i, epsilon(x_bar, x[i]))
+
+        #plot_all(x, x_bar, k)
         for i in range(N):
             # Send in mcast?
-            send_worker_data(socket[i], z)
+            send_worker_data(socket[i], x_bar)
         # TODO(johmathe): stopping criterion
 
 main_thread()
