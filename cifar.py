@@ -48,17 +48,17 @@ Y_train = np_utils.to_categorical(y_train, nb_classes)
 Y_test = np_utils.to_categorical(y_test, nb_classes)
 
 model = Sequential()
-
-model.add(Convolution2D(nb_filters[0], image_dimensions, nb_conv[0], nb_conv[0], border_mode='full'))
+init='he_normal'
+model.add(Convolution2D(nb_filters[0], image_dimensions, nb_conv[0], nb_conv[0], border_mode='full',init=init))
 model.add(Activation('relu'))
-model.add(Convolution2D(nb_filters[0], nb_filters[0], nb_conv[0], nb_conv[0]))
+model.add(Convolution2D(nb_filters[0], nb_filters[0], nb_conv[0], nb_conv[0],init=init))
 model.add(Activation('relu'))
 model.add(MaxPooling2D(poolsize=(nb_pool[0], nb_pool[0])))
 model.add(Dropout(0.25))
 
-model.add(Convolution2D(nb_filters[1], nb_filters[0], nb_conv[0], nb_conv[0], border_mode='full'))
+model.add(Convolution2D(nb_filters[1], nb_filters[0], nb_conv[0], nb_conv[0], border_mode='full',init=init))
 model.add(Activation('relu'))
-model.add(Convolution2D(nb_filters[1], nb_filters[1], nb_conv[1], nb_conv[1]))
+model.add(Convolution2D(nb_filters[1], nb_filters[1], nb_conv[1], nb_conv[1],init=init))
 model.add(Activation('relu'))
 model.add(MaxPooling2D(poolsize=(nb_pool[1], nb_pool[1])))
 model.add(Dropout(0.25))
@@ -66,11 +66,11 @@ model.add(Dropout(0.25))
 model.add(Flatten())
 # the image dimensions are the original dimensions divided by any pooling
 # each pixel has a number of filters, determined by the last Convolution2D layer
-model.add(Dense(nb_filters[-1] * (shapex / nb_pool[0] / nb_pool[1]) * (shapey / nb_pool[0] / nb_pool[1]), 512))
+model.add(Dense(nb_filters[-1] * (shapex / nb_pool[0] / nb_pool[1]) * (shapey / nb_pool[0] / nb_pool[1]), 512,init=init))
 model.add(Activation('relu'))
 model.add(Dropout(0.5))
 
-model.add(Dense(512, nb_classes))
+model.add(Dense(512, nb_classes,init=init))
 model.add(Activation('softmax'))
 
 # let's train the model using SGD + momentum (how original).
