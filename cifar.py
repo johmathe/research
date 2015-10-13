@@ -8,8 +8,7 @@ from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.optimizers import SGD, Adadelta, Adagrad
 from keras.utils import np_utils, generic_utils
 from six.moves import range
-import numpy as np
-np.random.seed(1337)
+
 '''
     Train a (fairly simple) deep CNN on the CIFAR10 small images dataset.
     GPU run command:
@@ -24,18 +23,12 @@ np.random.seed(1337)
 batch_size = 32
 nb_classes = 10
 nb_epoch = 200
-data_augmentation = False
+data_augmentation = True
 
-# shape of the image (SHAPE x SHAPE)
-shapex, shapey = 32, 32
-# number of convolutional filters to use at each layer
-nb_filters = [32, 64]
-# level of pooling to perform at each layer (POOL x POOL)
-nb_pool = [2, 2]
-# level of convolution to perform at each layer (CONV x CONV)
-nb_conv = [3, 3]
+# input image dimensions
+img_rows, img_cols = 32, 32
 # the CIFAR10 images are RGB
-image_dimensions = 3
+img_channels = 3
 
 # the data, shuffled and split between tran and test sets
 (X_train, y_train), (X_test, y_test) = cifar10.load_data()
@@ -48,43 +41,41 @@ Y_train = np_utils.to_categorical(y_train, nb_classes)
 Y_test = np_utils.to_categorical(y_test, nb_classes)
 
 model = Sequential()
-init='he_normal'
-model.add(Convolution2D(nb_filters[0], image_dimensions, nb_conv[0], nb_conv[0], border_mode='full',init=init))
+
+model.add(Convolution2D(32, 3, 3, border_mode='full',
+                        input_shape=(img_channels, img_rows, img_cols)))
 model.add(Activation('relu'))
-model.add(Convolution2D(nb_filters[0], nb_filters[0], nb_conv[0], nb_conv[0],init=init))
+model.add(Convolution2D(32, 3, 3))
 model.add(Activation('relu'))
-model.add(MaxPooling2D(poolsize=(nb_pool[0], nb_pool[0])))
+model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Dropout(0.25))
 
-model.add(Convolution2D(nb_filters[1], nb_filters[0], nb_conv[0], nb_conv[0], border_mode='full',init=init))
+model.add(Convolution2D(64, 3, 3, border_mode='full'))
 model.add(Activation('relu'))
-model.add(Convolution2D(nb_filters[1], nb_filters[1], nb_conv[1], nb_conv[1],init=init))
+model.add(Convolution2D(64, 3, 3))
 model.add(Activation('relu'))
-model.add(MaxPooling2D(poolsize=(nb_pool[1], nb_pool[1])))
+model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Dropout(0.25))
 
 model.add(Flatten())
-# the image dimensions are the original dimensions divided by any pooling
-# each pixel has a number of filters, determined by the last Convolution2D layer
-model.add(Dense(nb_filters[-1] * (shapex / nb_pool[0] / nb_pool[1]) * (shapey / nb_pool[0] / nb_pool[1]), 512,init=init))
+model.add(Dense(512))
 model.add(Activation('relu'))
 model.add(Dropout(0.5))
-
-model.add(Dense(512, nb_classes,init=init))
+model.add(Dense(nb_classes))
 model.add(Activation('softmax'))
 
 # let's train the model using SGD + momentum (how original).
 sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 model.compile(loss='categorical_crossentropy', optimizer=sgd)
-model.load_weights('weights.hd5')
+
+X_train = X_train.astype("float32")
+X_test = X_test.astype("float32")
+X_train /= 255
+X_test /= 255
+
 if not data_augmentation:
     print("Not using data augmentation or normalization")
-
-    X_train = X_train.astype("float32")
-    X_test = X_test.astype("float32")
-    X_train /= 255
-    X_test /= 255
-    model.fit(X_train, Y_train, batch_size=batch_size, validation_split=0.1, show_accuracy=True, nb_epoch=nb_epoch)
+    model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch)
     score = model.evaluate(X_test, Y_test, batch_size=batch_size)
     print('Test score:', score)
 
