@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 import cPickle as pickle
 from keras import callbacks
-from keras import regularizers
 from keras.datasets import cifar10
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten
@@ -10,23 +9,9 @@ from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.optimizers import SGD
 from keras.regularizers import Consensus
 from keras.utils import np_utils
-from keras import callbacks
 
 import sys
 
-'''
-    Train a (fairly simple) deep CNN on the CIFAR10 small images dataset.
-
-    GPU run command:
-        THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32 python cifar10_cnn.py
-
-    It gets down to 0.65 test logloss in 25 epochs, and down to 0.55 after 50 epochs.
-    (it's still underfitting at that point, though).
-
-    Note: the data was pickled with Python 2, and some encoding issues might prevent you
-    from loading it in Python 3. You might have to load it in Python 2,
-    save it in a different format, load it in Python 3 and repickle it.
-'''
 
 class History(callbacks.Callback):
 
@@ -76,11 +61,11 @@ data_augmentation = False
 (X_train, y_train), (X_test, y_test) = cifar10.load_data()
 
 if sys.argv[1] == '1':
-    X_train=X_train[0:25000]
-    y_train=y_train[0:25000]
+    X_train = X_train[0:25000]
+    y_train = y_train[0:25000]
 if sys.argv[1] == '0':
-    X_train=X_train[25000:]
-    y_train=y_train[25000:]
+    X_train = X_train[25000:]
+    y_train = y_train[25000:]
 print('X_train shape:', X_train.shape)
 print(X_train.shape[0], 'train samples')
 print(X_test.shape[0], 'test samples')
@@ -142,9 +127,9 @@ model.load_weights('weights.hd5')
 
 if len(sys.argv) > 1:
     port = 6000 + int(sys.argv[1])
-    server_address = 'tcp://bordeaux.local.:%d' % port
+    server_address = 'tcp://localhost:%d' % port
     print('using weight server @ %s' % server_address)
-    weight_sync = callbacks.WeightSynchronizer(server_address, frequency=1)
+    weight_sync = callbacks.WeightSynchronizer(server_address, frequency=512)
 
 
 print("Not using data augmentation or normalization")
@@ -154,10 +139,13 @@ X_test = X_test.astype("float32")
 X_train /= 255
 X_test /= 255
 history = History()
-model.fit(X_train, Y_train,
+model.fit(X_train,
+          Y_train,
           batch_size=batch_size,
           callbacks=[weight_sync, history],
           verbose=1,
-          nb_epoch=nb_epoch,show_accuracy=True)
+          validation_data=(X_test, Y_test),
+          nb_epoch=nb_epoch,
+          show_accuracy=True)
 score = model.evaluate(X_test, Y_test, batch_size=batch_size)
 print('Test score:', score)
