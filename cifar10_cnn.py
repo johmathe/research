@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import cPickle as pickle
+from keras import callbacks
+from keras import regularizers
 from keras.datasets import cifar10
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten
@@ -67,7 +69,7 @@ img_rows, img_cols = 32, 32
 img_channels = 3
 batch_size = 32
 nb_classes = 10
-nb_epoch = 100
+nb_epoch = 200
 data_augmentation = False
 
 # the data, shuffled and split between tran and test sets

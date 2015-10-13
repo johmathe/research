@@ -6,7 +6,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-EPOCHS = 100
+EPOCHS = 400
 PORT_BASE = 6000
 N = 2
 
